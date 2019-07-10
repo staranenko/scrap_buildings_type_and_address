@@ -2,15 +2,11 @@ import pandas as pd
 import os
 from bs4 import BeautifulSoup
 import requests
+import time
+import datetime
 
 ROOT_URL = 'https://prawdom.ru'
 START_URL = '/k_seria.php?d=progjekt_docs/s1-447.php&s=3&r=99050'
-
-
-# data = {'type',
-#         'url',
-#         'address'
-#         }
 
 
 def get_html(url):
@@ -36,7 +32,8 @@ def get_building_info(html):
     return info
 
 
-def main():
+def main(sleep=0):
+    start_time = datetime.datetime.now()
     table_out = []
     for page_type_name in get_building_series(get_html(ROOT_URL + START_URL)):
         lot_url = ROOT_URL + page_type_name.find('a').get('href')
@@ -59,26 +56,27 @@ def main():
             data_info = {}
 
             for i in get_building_info(get_html(building_url)):
-                info_tag = i.text.split('-')[0].strip()
+                info_tag = i.text.split('-')[0].strip().rstrip('.')
+
                 try:
                     info_value = i.find('span').text.strip()
                 except AttributeError:
-                    # print(i)
                     try:
                         info_value = i.find('u').text
                     except AttributeError:
                         info_value = i
 
-                # if len(info_value) > 1:
-                #     if info_value[-1] == ',':
-                #         info_value = info_value[:-1]
                 try:
                     info_value = info_value.rstrip(',').rstrip('.')
                 except TypeError:
                     pass
 
+                if info_tag == 'Дом  газифицирован' or info_tag == 'Дом  негазифицирован':
+                    info_tag = 'Газификация'
+                    info_value = str(info_value).replace('<li>', '').replace('</li>', '').replace('<br/>', '').strip()
+
                 data_info[info_tag.upper()] = info_value
-                # print(info_tag, ':', info_value)
+                time.sleep(sleep)
 
             print(data_info)
             table_out.append(dict(**data_series, **data_building, **data_info))
@@ -92,6 +90,8 @@ def main():
     df_out.to_excel(writer, na_rep='NaN')
     writer.save()
 
+    print('Время работы программы:', datetime.datetime.now() - start_time)
+
 
 if __name__ == '__main__':
-    main()
+    main(sleep=0.01)
