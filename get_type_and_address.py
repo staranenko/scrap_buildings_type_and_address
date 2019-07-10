@@ -68,10 +68,6 @@ def main():
                         info_value = i.find('u').text
                     except AttributeError:
                         info_value = i
-
-                # if len(info_value) > 1:
-                #     if info_value[-1] == ',':
-                #         info_value = info_value[:-1]
                 try:
                     info_value = info_value.rstrip(',').rstrip('.')
                 except TypeError:
@@ -83,7 +79,7 @@ def main():
             print(data_info)
             table_out.append(dict(**data_series, **data_building, **data_info))
 
-        if lot_name == 'Серия I-447':
+        if lot_name == 'Серия I-447':  # Условие для раннего выхода
             break
 
     df_out = pd.DataFrame(table_out)
