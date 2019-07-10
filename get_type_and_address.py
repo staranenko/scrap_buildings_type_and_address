@@ -8,6 +8,10 @@ import datetime
 ROOT_URL = 'https://prawdom.ru'
 START_URL = '/k_seria.php?d=progjekt_docs/s1-447.php&s=3&r=99050'
 
+test_series = {'Серия I-303'}  # Bad
+# test_series = {'Серия 1МГ-601Д'}  # Bad
+# test_series = {'Серия I-464'}  # Good
+
 
 def get_html(url):
     r = requests.get(url)
@@ -22,7 +26,7 @@ def get_building_series(html):
 
 def get_address_list(html):
     soup = BeautifulSoup(html, 'lxml')
-    addresses = soup.find('div', id='Right-Content').find('p', class_='mstr150').findAll('a')
+    addresses = soup.find('p', class_='mstr150').findAll('a')
     return addresses
 
 
@@ -38,6 +42,10 @@ def main(sleep=0):
     for page_type_name in get_building_series(get_html(ROOT_URL + START_URL)):
         lot_url = ROOT_URL + page_type_name.find('a').get('href')
         lot_name = page_type_name.find('a').text
+
+        if lot_name not in test_series:
+            continue  # Пропускаем все кроме списка test_series
+
         data_series = {'SERIES_NAME': lot_name,
                        'SERIES_URL': lot_url
                        }
@@ -81,8 +89,8 @@ def main(sleep=0):
             print(data_info)
             table_out.append(dict(**data_series, **data_building, **data_info))
 
-        if lot_name == 'Серия I-447':  # Условие для раннего выхода
-            break
+        # if lot_name == 'Серия I-447':  # Условие для раннего выхода
+        #     break
 
     df_out = pd.DataFrame(table_out)
 
@@ -94,4 +102,4 @@ def main(sleep=0):
 
 
 if __name__ == '__main__':
-    main(sleep=0.01)
+    main(sleep=0.02)
