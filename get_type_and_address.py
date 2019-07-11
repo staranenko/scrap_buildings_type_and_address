@@ -4,11 +4,13 @@ from bs4 import BeautifulSoup
 import requests
 import time
 import datetime
+from urllib.parse import urljoin
 
 ROOT_URL = 'https://prawdom.ru'
 START_URL = '/k_seria.php?d=progjekt_docs/s1-447.php&s=3&r=99050'
 
-test_series = {'Серия I-303'}  # Bad
+# test_series = {'Серия I-303'}  # Bad
+test_series = {'Серия '}  # Bad
 # test_series = {'Серия 1МГ-601Д'}  # Bad
 # test_series = {'Серия I-464'}  # Good
 
@@ -26,7 +28,11 @@ def get_building_series(html):
 
 def get_address_list(html):
     soup = BeautifulSoup(html, 'lxml')
-    addresses = soup.find('p', class_='mstr150').findAll('a')
+    parent = soup.find('p', class_='mstr150')
+    if parent:
+        addresses = parent.findAll('a')
+    else:
+        addresses = ''
     return addresses
 
 
@@ -36,15 +42,15 @@ def get_building_info(html):
     return info
 
 
-def main(sleep=0):
+def main(sleep=0.02):
     start_time = datetime.datetime.now()
     table_out = []
-    for page_type_name in get_building_series(get_html(ROOT_URL + START_URL)):
-        lot_url = ROOT_URL + page_type_name.find('a').get('href')
+    for page_type_name in get_building_series(get_html(urljoin(ROOT_URL, START_URL))):
+        lot_url = urljoin(ROOT_URL, page_type_name.find('a').get('href'))
         lot_name = page_type_name.find('a').text
 
-        if lot_name not in test_series:
-            continue  # Пропускаем все кроме списка test_series
+        # if lot_name not in test_series:
+        #     continue  # Пропускаем все кроме списка test_series
 
         data_series = {'SERIES_NAME': lot_name,
                        'SERIES_URL': lot_url
@@ -52,7 +58,7 @@ def main(sleep=0):
         print('\n', data_series, sep='')
 
         for address in get_address_list(get_html(lot_url)):
-            building_url = ROOT_URL + address.get('href')
+            building_url = urljoin(ROOT_URL, address.get('href'))
             building_address = address.text.split(' - ')
             building_street = building_address[0]
             building_house = building_address[1]
